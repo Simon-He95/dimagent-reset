@@ -9,16 +9,17 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:api": "wrangler dev --port 8787 --local",
+    "dev:api": "wrangler dev --config wrangler.test.jsonc --port 8787 --local",
     "build": "pnpm run typecheck && vite build",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.worker.json",
-    "lint": "oxlint src worker test vite.config.ts vitest.config.ts",
+    "lint": "oxlint src server worker functions test vite.config.ts vitest.config.ts",
     "test": "vitest run",
     "db:migrate:local": "wrangler d1 migrations apply dim-reset --local",
     "db:migrate:remote": "wrangler d1 migrations apply dim-reset --remote",
     "stats:local": "wrangler d1 execute dim-reset --local --file ./scripts/report.sql",
     "stats:remote": "wrangler d1 execute dim-reset --remote --file ./scripts/report.sql",
-    "deploy": "pnpm run build && wrangler deploy",
+    "deploy": "pnpm run build && wrangler pages deploy --branch main",
+    "pages:create": "wrangler pages project create dim-reset --production-branch main",
     "clean": "rimraf --glob dist .wrangler *.tsbuildinfo"
   },
   "dependencies": {

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "dim-reset-test",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dim-reset",
+      "database_id": "69b49ae8-d05a-4980-8b98-db299c92289e",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

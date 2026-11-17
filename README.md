@@ -2,11 +2,13 @@
 
 A one-screen petition site for a DimAgent reset. Saint Tibo grants the tokens. Visitors count the requests.
 
+**Live:** https://dim-reset.pages.dev
+
 <p align="center">
   <img src="./src/assets/saint-tibo-640.jpg" width="300" alt="Saint Tibo, giver of tokens and reseter of limits" />
 </p>
 
-The page is a Vue 3 + Vite static app served by a Cloudflare Worker. Click counts and country/region totals live in Cloudflare D1. The Worker also owns the small JSON API.
+The page is a Vue 3 + Vite static app served by Cloudflare Pages. Pages Functions own the small JSON API, and click counts plus country/region totals live in Cloudflare D1.
 
 ## What it does
 
@@ -59,9 +61,9 @@ Mobile
 ## Stack
 
 - Vue 3, Vite 6, TypeScript, hand-written CSS.
-- Cloudflare Workers static assets for the built site.
+- Cloudflare Pages for the built site and Pages Functions.
 - Cloudflare D1 for durable aggregates.
-- Vitest with `@cloudflare/vitest-plugin` for Worker and D1 integration tests.
+- Vitest with `@cloudflare/vitest-plugin` for the shared API handler and D1 integration tests.
 - Self-hosted Geist and Cormorant Garamond via Fontsource.
 
 ## Local development
@@ -76,16 +78,11 @@ pnpm run db:migrate:local
 Run the API and the Vite dev server in two terminals:
 
 ```bash
-pnpm run dev:api   # http://127.0.0.1:8787, local D1
+pnpm run dev:api   # http://127.0.0.1:8787, Worker test harness + local D1
 pnpm run dev       # http://127.0.0.1:5178, proxies /api to 8787
 ```
 
-To preview the built Worker app exactly as it will be served:
-
-```bash
-pnpm run build
-pnpm exec wrangler dev --local
-```
+`worker/index.ts` is a local and test harness that calls the same `server/petition.ts` handler as production. The deployed Pages Function is the thin adapter in `functions/api/[[path]].ts`.
 
 The local D1 database is stored under `.wrangler/` and is not committed. Local requests get a Cloudflare location from Miniflare; production uses the real `request.cf` country and region.
 
@@ -113,19 +110,21 @@ If pnpm blocks the `workerd` install script, run `pnpm approve-builds` once.
    pnpm run db:migrate:remote
    ```
 
-5. Build and deploy:
+5. Create the Pages project once:
+
+   ```bash
+   pnpm run pages:create
+   ```
+
+6. Build and deploy:
 
    ```bash
    pnpm run deploy
    ```
 
-The first deploy gives you a `dim-reset.<account>.workers.dev` URL. To use `reset.dimagent.com`, attach the custom domain in the Cloudflare dashboard or add a route to `wrangler.jsonc`:
+The production URL is `https://dim-reset.pages.dev`. Add a custom domain from the Pages project's **Custom domains** settings; do not enable a `workers.dev` route for this project.
 
-```jsonc
-"routes": [{ "pattern": "reset.dimagent.com", "custom_domain": true }]
-```
-
-The canonical URL and Open Graph tags in `index.html` point at the intended `reset.dimagent.com` origin. Update them when you attach the final domain. The social image is `public/og-saint.jpg`.
+The canonical URL and Open Graph tags in `index.html` point at `https://dim-reset.pages.dev/`. Update them when you attach the final domain. The social image is `public/og-saint.jpg`.
 
 ## Data model
 
@@ -191,11 +190,11 @@ The report prints the all-time total, today's UTC total, top countries, top regi
 - The page polls stats every 10 seconds while visible and refreshes on visibility changes.
 - Rejected/queued clicks do not block the button.
 
-There is no bot protection or per-IP rate limit. The numbers are a community signal, not audited votes. If abuse becomes a problem, add Cloudflare Turnstile or a rate-limiting binding at the Worker boundary.
+There is no bot protection or per-IP rate limit. The numbers are a community signal, not audited votes. If abuse becomes a problem, add Cloudflare Turnstile or a rate-limiting binding at the API boundary.
 
 ## Privacy
 
-The Worker stores only aggregate country and region counts. It does not store IP addresses, user agents, or cookies. The browser keeps locale, sound preference, best streak, personal click count, and the unsent click queue in `localStorage`. No third-party analytics or requests are included.
+The API stores only aggregate country and region counts. It does not store IP addresses, user agents, or cookies. The browser keeps locale, sound preference, best streak, personal click count, and the unsent click queue in `localStorage`. No third-party analytics or requests are included.
 
 ## Tests
 
